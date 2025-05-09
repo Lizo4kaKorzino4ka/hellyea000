@@ -31,7 +31,7 @@ do
 
     local Window = Library:CreateWindow({
         Title = "Phosphorus Aimbot",
-        Footer = "Aftermath died from hackers, and it's your fault.",
+        Footer = "https://discord.gg/ysupgudu",
         NotifySide = "Right",
         ShowCustomCursor = true,
     })
