@@ -30,7 +30,7 @@ do
     Library.ShowToggleFrameInKeybinds = true
 
     local Window = Library:CreateWindow({
-        Title = "Aimbot by Aftergeometry",
+        Title = "Phosphorus Aimbot",
         Footer = "Aftermath died from hackers, and it's your fault.",
         NotifySide = "Right",
         ShowCustomCursor = true,
