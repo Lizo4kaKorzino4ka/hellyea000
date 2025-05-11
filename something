@@ -1,16 +1,26 @@
 getgenv().config = {
-    CircleRadius = 80,
-    BaseBulletSpeed = 1000,
-    PredictionBoost = 1.0,
-    Gravity = 196.2,
-    RandomJigger = 0,
-    ShowBulletSpeed = true,
-    DebugLineEnabled = true,
+
+    -- aim settings:
+    CircleRadius = 250,
+    Gravity = 50,
+    BaseBulletSpeed = 2200,
+    AimingEnabled = true,
+    MaxDistance = 80, -- aim to nearest target mode max distance
+    CloseRangeThreshold = 50,
+    PredictionBoost = 1,
+    CloseRangeBoost = 1.6,
+    RandomJigger = 2,
+    UseOriginalHead = false,
+
+    --visuals:
+    DebugLineEnabled = false,
+    ShowBulletSpeed = false,
     ShowActiveModes = true,
-    MaxDistance = 2000,
-    CloseRangeThreshold = 500,
-    CloseRangeBoost = 7,
-    localPlayerVelocityInfluence = 0.5
+    ShowDebugServerHeadVizualization = true,
+
+    CircleColor = Color3.new(0,0,0),
+    DebugLineColor = Color3.new(0,0,0),
+
 }
 
 --[[
