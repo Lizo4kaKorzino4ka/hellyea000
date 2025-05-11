@@ -583,6 +583,7 @@ print("Aimbot initialized")
 
 
 print("Initiliazing gui...")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/homeworks1111/uhh_yea/refs/heads/main/watermark.lua"))()
 do
     local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
     local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
