@@ -596,8 +596,8 @@ do
     Library.ShowToggleFrameInKeybinds = true
 
     local Window = Library:CreateWindow({
-        Title = "Aimbot by Aftergeometry",
-        Footer = "Aftermath died from hackers, and it's your fault.",
+        Title = "Phosphorus Aimbot",
+        Footer = "https://discord.gg/ysupgudu",
         NotifySide = "Right",
         ShowCustomCursor = true,
     })
